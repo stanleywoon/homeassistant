@@ -1,0 +1,82 @@
+blueprint:
+  name: Timer Switch
+  description: Turn a switch off after specified duration
+  domain: automation
+  input:
+    target_switch:
+      name: Switch
+      description: Target switch to switch off after the timer finished
+      selector:
+        entity:
+          domain: switch
+    reference_timer:
+      name: Timer
+      description: Timer that link to switch
+      selector:
+        entity:
+          domain: timer
+    timer_duration:
+      name: Duration
+      description: Duration to switch off the switch
+      selector:
+        duration:
+triggers:
+  - trigger: state
+    entity_id:
+      - !input target_switch
+    to: "on"
+    id: switch_turned_On
+  - trigger: event
+    event_type: timer.finished
+    event_data:
+      entity_id: !input reference_timer
+    id: timer_finished
+  - trigger: state
+    entity_id:
+      - !input target_switch
+    to: "off"
+    id: switch_turned_Off
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - timer_finished
+          - condition: state
+            entity_id: !input target_switch
+            state: "on"
+        sequence:
+          - action: switch.turn_off
+            metadata: {}
+            data: {}
+            target:
+              entity_id: !input target_switch
+      - conditions:
+          - condition: trigger
+            id:
+              - switch_turned_On
+          - condition: state
+            entity_id: !input reference_timer
+            state: idle
+        sequence:
+          - action: timer.start
+            metadata: {}
+            data:
+              duration: !input timer_duration
+            target:
+              entity_id: !input reference_timer
+      - conditions:
+          - condition: trigger
+            id:
+              - switch_turned_Off
+          - condition: state
+            entity_id: !input reference_timer
+            state:
+              - active
+              - paused
+        sequence:
+          - action: timer.cancel
+            metadata: {}
+            data: {}
+            target:
+              entity_id: !input reference_timer
