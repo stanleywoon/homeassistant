@@ -1,0 +1,66 @@
+blueprint:
+  name: Curtain Slider
+  description: Aqara slider slide to open and close curtain
+  domain: automation
+  input:
+    target_switch:
+      name: Switch
+      description: Target switch with slider
+      selector:
+        device:
+          filter:
+            - integration: mqtt
+          entity:
+            - domain: switch
+    target_curtains:
+      name: Curtains
+      description: Curtains that link to slider
+      selector:
+        entity:
+          domain: cover
+          multiple: true
+triggers:
+  - domain: mqtt
+    device_id: !input target_switch
+    type: action
+    subtype: slider_up
+    trigger: device
+    id: switch_slide_up
+  - domain: mqtt
+    device_id: !input target_switch
+    type: action
+    subtype: slider_down
+    trigger: device
+    id: switch_slide_down
+  - domain: mqtt
+    device_id: !input target_switch
+    type: action
+    subtype: slider_single
+    trigger: device
+    id: switch_slide_single
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - switch_slide_up
+        sequence:
+          - service: cover.open_cover
+            target:
+              entity_id: !input target_curtains
+      - conditions:
+          - condition: trigger
+            id:
+              - switch_slide_down
+        sequence:
+          - service: cover.close_cover
+            target:
+              entity_id: !input target_curtains
+      - conditions:
+          - condition: trigger
+            id:
+              - switch_slide_single
+        sequence:
+          - service: cover.stop_cover
+            target:
+              entity_id: !input target_curtains
